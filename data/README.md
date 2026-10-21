@@ -1,6 +1,6 @@
 # Postcode rule data
 
-`rules.jsonc` contains country-level postcode format patterns, examples, and normalization/display replacements. Its Google-derived patterns and examples come from the [Google libaddressinput metadata service](https://chromium-i18n.appspot.com/ssl-address/data/) and are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The Google project identifies its data license in its [repository README](https://github.com/google/libaddressinput).
+`rules.jsonc` contains country-level postcode format patterns, examples, and normalization, primary, display, and suffix rules. Its Google-derived patterns and examples come from the [Google libaddressinput metadata service](https://chromium-i18n.appspot.com/ssl-address/data/) and are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The Google project identifies its data license in its [repository README](https://github.com/google/libaddressinput).
 
 Each country entry includes the metadata URL and verification date. Luxembourg's prefix forms and the United Kingdom's postcode reference also cite official postal guidance. Norway's three-digit shorthand is a package-specific normalization rule; Google's metadata describes the four-digit postcode format.
 
