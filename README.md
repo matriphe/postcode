@@ -1,10 +1,16 @@
 # postcode
 
-`postcode` validates, formats, and displays postal codes using country-specific rules embedded in the package. It works offline and supports Go 1.16 and later.
+Validate, format, and display postal codes with country-specific rules embedded in the package. Works offline and supports Go 1.16 and later.
+
+## Installation
 
 ```sh
 go get github.com/matriphe/postcode
 ```
+
+## Usage
+
+Select a country with its case-insensitive ISO alpha-2 code, then use its postcode handler:
 
 ```go
 package main
@@ -28,14 +34,15 @@ func main() {
 }
 ```
 
-Country codes are case-insensitive ISO alpha-2 codes. `IsValid` checks format only; it does not verify that a postcode is assigned or deliverable. Formatting methods return an empty string for invalid input.
+`IsValid` checks whether a value matches the country's postcode format. It does not check whether the postcode is assigned or deliverable. `Format`, `Display`, and `Code` return an empty string for invalid input. `Format` returns the compact canonical form, `Display` returns the conventional display form, and `Code` removes a country-specific prefix where configured. For example, Luxembourg's `L-1234` becomes `L1234` with `Format`, `L-1234` with `Display`, and `1234` with `Code`.
 
-`Format` returns compact canonical form, `Display` returns the conventional display form, and `Code` removes a country-specific prefix where configured. For example, Luxembourg's `L-1234` becomes `L1234` with `Format`, `L-1234` with `Display`, and `1234` with `Code`.
-
-Custom JSONC rules can be loaded and merged into an independent standardizer:
+Custom JSONC rules can be merged into an independent standardizer created with `postcode.New()`:
 
 ```go
+package main
+
 import (
+	"fmt"
 	"strings"
 
 	"github.com/matriphe/postcode"
@@ -50,15 +57,28 @@ func custom() error {
 	if err != nil {
 		return err
 	}
+
 	std, err := postcode.New().WithConfig(config)
 	if err != nil {
 		return err
 	}
-	_, err = std.In("ZZ")
-	return err
+	p, err := std.In("ZZ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(p.IsValid("1234")) // true
+	return nil
 }
 ```
 
-The embedded JSONC rules currently cover 179 countries and territories with available postcode patterns. Each rule records its source and verification date. A missing rule means the package cannot validate that country's format.
+A custom config can add or override country rules without changing the package's default rules.
 
-The package source is licensed under MIT. The rule data includes material derived from Google `libaddressinput`, licensed CC BY 4.0; see [data/README.md](data/README.md) and the source records in [data/rules.jsonc](data/rules.jsonc).
+## Data/Rules
+
+Country postcode patterns and examples are embedded in the package, so validation works offline and does not require a separate data download. The rules currently cover 179 countries and territories for which a usable pattern was available. Each rule records its source and verification date; countries without a usable pattern are omitted rather than assigned a guessed rule.
+
+The data includes material derived from Google `libaddressinput` and country-specific overrides. See [data/README.md](data/README.md) for attribution and coverage details, and [data/rules.jsonc](data/rules.jsonc) for the rules and their sources.
+
+## License
+
+The Go package source code is licensed under the [MIT License](LICENSE). The embedded rule data includes material derived from Google `libaddressinput`, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The data's attribution and source information are documented in [data/README.md](data/README.md). Distributors of applications that include the embedded rules should preserve that attribution.
