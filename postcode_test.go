@@ -15,25 +15,38 @@ func TestCountrySpecificBehavior(t *testing.T) {
 		format  string
 		display string
 		code    string
+		full    string
+		suffix  string
 	}{
-		{country: "de", input: "10557", valid: true, format: "10557", display: "10557", code: "10557"},
+		{country: "de", input: "10557", valid: true, format: "10557", display: "10557", code: "10557", full: "10557"},
 		{country: "DE", input: "1055", valid: false},
-		{country: "DE", input: "1 0 5 5 7", valid: false, format: "10557", display: "10557", code: "10557"},
-		{country: "NO", input: "1055", valid: true, format: "1055", display: "1055", code: "1055"},
-		{country: "NO", input: "105", valid: true, format: "0105", display: "0105", code: "0105"},
-		{country: "NL", input: "1234 AB", valid: true, format: "1234AB", display: "1234 AB", code: "1234AB"},
-		{country: "NL", input: "1234AB", valid: true, format: "1234AB", display: "1234 AB", code: "1234AB"},
+		{country: "DE", input: "1 0 5 5 7", valid: false, format: "10557", display: "10557", code: "10557", full: "10557"},
+		{country: "AM", input: "0002", valid: true, format: "0002", display: "0002", code: "0002", full: "0002"},
+		{country: "EC", input: "090105", valid: true, format: "090105", display: "090105", code: "090105", full: "090105"},
+		{country: "FI", input: "00550", valid: true, format: "00550", display: "00550", code: "00550", full: "00550"},
+		{country: "UA", input: "01055", valid: true, format: "01055", display: "01055", code: "01055", full: "01055"},
+		{country: "VA", input: "00120", valid: true, format: "00120", display: "00120", code: "00120", full: "00120"},
+		{country: "ZA", input: "0001", valid: true, format: "0001", display: "0001", code: "0001", full: "0001"},
+		{country: "NO", input: "1055", valid: true, format: "1055", display: "1055", code: "1055", full: "1055"},
+		{country: "NO", input: "105", valid: true, format: "0105", display: "0105", code: "0105", full: "0105"},
+		{country: "NL", input: "1234 AB", valid: true, format: "1234AB", display: "1234 AB", code: "1234AB", full: "1234 AB"},
+		{country: "NL", input: "1234AB", valid: true, format: "1234AB", display: "1234 AB", code: "1234AB", full: "1234 AB"},
 		{country: "NL", input: "12 34 AB", valid: false},
-		{country: "GB", input: "ec1y 8sy", valid: true, format: "EC1Y8SY", display: "EC1Y 8SY", code: "EC1Y8SY"},
-		{country: "GB", input: "GIR 0AA", valid: true, format: "GIR0AA", display: "GIR 0AA", code: "GIR0AA"},
+		{country: "GB", input: "ec1y 8sy", valid: true, format: "EC1Y8SY", display: "EC1Y 8SY", code: "EC1Y8SY", full: "EC1Y 8SY"},
+		{country: "GB", input: "GIR 0AA", valid: true, format: "GIR0AA", display: "GIR 0AA", code: "GIR0AA", full: "GIR 0AA"},
 		{country: "GB", input: "ZZ1 1ZZ", valid: false},
-		{country: "LU", input: "1234", valid: true, format: "L1234", display: "L-1234", code: "1234"},
-		{country: "LU", input: "L1234", valid: true, format: "L1234", display: "L-1234", code: "1234"},
-		{country: "LU", input: "L-1234", valid: true, format: "L1234", display: "L-1234", code: "1234"},
+		{country: "LU", input: "1234", valid: true, format: "L1234", display: "L-1234", code: "1234", full: "L-1234"},
+		{country: "LU", input: "L1234", valid: true, format: "L1234", display: "L-1234", code: "1234", full: "L-1234"},
+		{country: "LU", input: "L-1234", valid: true, format: "L1234", display: "L-1234", code: "1234", full: "L-1234"},
 		{country: "LU", input: "L-123", valid: false},
-		{country: "CA", input: "K1A 0B1", valid: true, format: "K1A0B1", display: "K1A 0B1", code: "K1A0B1"},
-		{country: "IE", input: "D02 X285", valid: true, format: "D02X285", display: "D02 X285", code: "D02X285"},
-		{country: "US", input: "00501-1234", valid: true, format: "005011234", display: "00501-1234", code: "005011234"},
+		{country: "CA", input: "K1A 0B1", valid: true, format: "K1A0B1", display: "K1A 0B1", code: "K1A0B1", full: "K1A 0B1"},
+		{country: "IE", input: "D02 X285", valid: true, format: "D02X285", display: "D02 X285", code: "D02X285", full: "D02 X285"},
+		{country: "US", input: "00501", valid: true, format: "00501", display: "00501", code: "00501", full: "00501"},
+		{country: "US", input: "00501-1234", valid: true, format: "00501", display: "00501", code: "005011234", full: "00501-1234", suffix: "1234"},
+		{country: "US", input: "00501 1234", valid: true, format: "00501", display: "00501", code: "005011234", full: "00501-1234", suffix: "1234"},
+		{country: "US", input: "005011234", valid: true, format: "00501", display: "00501", code: "005011234", full: "00501-1234", suffix: "1234"},
+		{country: "US", input: "00501-123", valid: false},
+		{country: "US", input: "00501123", valid: false},
 	}
 
 	for _, tt := range tests {
@@ -54,6 +67,12 @@ func TestCountrySpecificBehavior(t *testing.T) {
 				}
 				if got := p.Code(tt.input); got != tt.code {
 					t.Errorf("Code(%q) = %q, want %q", tt.input, got, tt.code)
+				}
+				if got := p.FullDisplay(tt.input); got != tt.full {
+					t.Errorf("FullDisplay(%q) = %q, want %q", tt.input, got, tt.full)
+				}
+				if got := p.Suffix(tt.input); got != tt.suffix {
+					t.Errorf("Suffix(%q) = %q, want %q", tt.input, got, tt.suffix)
 				}
 			}
 		})
@@ -103,17 +122,21 @@ func TestLoadJSONCAndMergeWithoutChangingDefaults(t *testing.T) {
 }
 
 func TestInvalidInputProducesEmptyStrings(t *testing.T) {
-	p, err := postcode.In("DE")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for name, got := range map[string]string{
-		"Format":  p.Format("1055"),
-		"Display": p.Display("1055"),
-		"Code":    p.Code("1055"),
-	} {
-		if got != "" {
-			t.Errorf("%s(invalid) = %q, want empty", name, got)
+	for country, input := range map[string]string{"DE": "1055", "US": "00501-123"} {
+		p, err := postcode.In(country)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for name, got := range map[string]string{
+			"Format":      p.Format(input),
+			"Display":     p.Display(input),
+			"Code":        p.Code(input),
+			"FullDisplay": p.FullDisplay(input),
+			"Suffix":      p.Suffix(input),
+		} {
+			if got != "" {
+				t.Errorf("%s(%q, %s) = %q, want empty", name, input, country, got)
+			}
 		}
 	}
 }

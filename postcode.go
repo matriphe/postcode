@@ -37,7 +37,9 @@ type CountryRule struct {
 	Pattern  string        `json:"pattern"`
 	Sanitize Sanitizer     `json:"sanitize,omitempty"`
 	Format   []Replacement `json:"format,omitempty"`
+	Primary  []Replacement `json:"primary,omitempty"`
 	Display  []Replacement `json:"display,omitempty"`
+	Suffix   []Replacement `json:"suffix,omitempty"`
 	Code     []Replacement `json:"code,omitempty"`
 	Examples []string      `json:"examples,omitempty"`
 	Sources  []Source      `json:"sources,omitempty"`
@@ -73,7 +75,9 @@ type compiledRule struct {
 	definition CountryRule
 	pattern    *regexp.Regexp
 	format     []compiledReplacement
+	primary    []compiledReplacement
 	display    []compiledReplacement
+	suffix     []compiledReplacement
 	code       []compiledReplacement
 }
 
@@ -175,16 +179,13 @@ func (p *Postcode) IsValid(input string) bool {
 	return p != nil && p.rule != nil && input != "" && p.rule.pattern.MatchString(input)
 }
 
-// Format returns the compact canonical form, or an empty string if invalid.
+// Format returns the primary postcode in compact form, or an empty string if invalid.
 func (p *Postcode) Format(input string) string {
-	if p == nil || p.rule == nil || input == "" {
+	formatted := p.canonical(input)
+	if formatted == "" {
 		return ""
 	}
-	clean := sanitize(input, p.rule.definition.Sanitize)
-	if clean == "" || (!p.rule.pattern.MatchString(input) && !p.rule.pattern.MatchString(clean)) {
-		return ""
-	}
-	return applyReplacements(clean, p.rule.format)
+	return applyReplacements(formatted, p.rule.primary)
 }
 
 // Display returns the country's display form, or an empty string if invalid.
@@ -196,13 +197,44 @@ func (p *Postcode) Display(input string) string {
 	return applyReplacements(formatted, p.rule.display)
 }
 
+// FullDisplay returns the complete postcode in its conventional display form.
+// For countries without an extended postcode, this is the same as Display.
+func (p *Postcode) FullDisplay(input string) string {
+	formatted := p.canonical(input)
+	if formatted == "" {
+		return ""
+	}
+	return applyReplacements(formatted, p.rule.display)
+}
+
+// Suffix returns an optional country-specific postcode suffix, or an empty
+// string when the postcode has no suffix or the input is invalid.
+func (p *Postcode) Suffix(input string) string {
+	formatted := p.canonical(input)
+	if formatted == "" || len(p.rule.suffix) == 0 {
+		return ""
+	}
+	return applyReplacements(formatted, p.rule.suffix)
+}
+
 // Code returns the canonical postcode without any country-specific prefix.
 func (p *Postcode) Code(input string) string {
-	formatted := p.Format(input)
+	formatted := p.canonical(input)
 	if formatted == "" {
 		return ""
 	}
 	return applyReplacements(formatted, p.rule.code)
+}
+
+func (p *Postcode) canonical(input string) string {
+	if p == nil || p.rule == nil || input == "" {
+		return ""
+	}
+	clean := sanitize(input, p.rule.definition.Sanitize)
+	if clean == "" || (!p.rule.pattern.MatchString(input) && !p.rule.pattern.MatchString(clean)) {
+		return ""
+	}
+	return applyReplacements(clean, p.rule.format)
 }
 
 func embeddedStandardizer() *Standardizer {
@@ -260,15 +292,23 @@ func compileRule(definition CountryRule) (*compiledRule, error) {
 	if err != nil {
 		return nil, fmt.Errorf("format replacement: %w", err)
 	}
+	primary, err := compileReplacements(definition.Primary)
+	if err != nil {
+		return nil, fmt.Errorf("primary replacement: %w", err)
+	}
 	display, err := compileReplacements(definition.Display)
 	if err != nil {
 		return nil, fmt.Errorf("display replacement: %w", err)
+	}
+	suffix, err := compileReplacements(definition.Suffix)
+	if err != nil {
+		return nil, fmt.Errorf("suffix replacement: %w", err)
 	}
 	code, err := compileReplacements(definition.Code)
 	if err != nil {
 		return nil, fmt.Errorf("code replacement: %w", err)
 	}
-	return &compiledRule{definition: definition, pattern: pattern, format: format, display: display, code: code}, nil
+	return &compiledRule{definition: definition, pattern: pattern, format: format, primary: primary, display: display, suffix: suffix, code: code}, nil
 }
 
 func compileReplacements(replacements []Replacement) ([]compiledReplacement, error) {

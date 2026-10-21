@@ -4000,16 +4000,28 @@
     },
     "US": {
       "name": "United States",
-      "pattern": "^(?:(\\d{5})([ \\-](\\d{4}))?)$",
+      "pattern": "^(?:\\d{5}(?:[ \\-]?\\d{4})?)$",
       "sanitize": {
         "remove": " \t\r\n-",
         "uppercase": true
       },
       "format": [],
+      "primary": [
+        {
+          "pattern": "^([0-9]{5})([0-9]{4})?$",
+          "replace": "$1"
+        }
+      ],
       "display": [
         {
           "pattern": "^([0-9]{5})([0-9]{4})$",
           "replace": "$1-$2"
+        }
+      ],
+      "suffix": [
+        {
+          "pattern": "^([0-9]{5})([0-9]{4})?$",
+          "replace": "$2"
         }
       ],
       "code": [],
