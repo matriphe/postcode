@@ -1,78 +1,67 @@
 package postcode_test
 
 import (
+	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/matriphe/postcode"
 )
 
-func TestCountrySpecificBehavior(t *testing.T) {
-	tests := []struct {
-		country string
-		input   string
-		valid   bool
-		format  string
-		display string
-		code    string
-		full    string
-		suffix  string
-	}{
-		{country: "de", input: "10557", valid: true, format: "10557", display: "10557", code: "10557", full: "10557"},
-		{country: "DE", input: "1055", valid: false},
-		{country: "DE", input: "1 0 5 5 7", valid: false, format: "10557", display: "10557", code: "10557", full: "10557"},
-		{country: "AM", input: "0002", valid: true, format: "0002", display: "0002", code: "0002", full: "0002"},
-		{country: "EC", input: "090105", valid: true, format: "090105", display: "090105", code: "090105", full: "090105"},
-		{country: "FI", input: "00550", valid: true, format: "00550", display: "00550", code: "00550", full: "00550"},
-		{country: "UA", input: "01055", valid: true, format: "01055", display: "01055", code: "01055", full: "01055"},
-		{country: "VA", input: "00120", valid: true, format: "00120", display: "00120", code: "00120", full: "00120"},
-		{country: "ZA", input: "0001", valid: true, format: "0001", display: "0001", code: "0001", full: "0001"},
-		{country: "NO", input: "1055", valid: true, format: "1055", display: "1055", code: "1055", full: "1055"},
-		{country: "NO", input: "105", valid: true, format: "0105", display: "0105", code: "0105", full: "0105"},
-		{country: "NL", input: "1234 AB", valid: true, format: "1234AB", display: "1234 AB", code: "1234AB", full: "1234 AB"},
-		{country: "NL", input: "1234AB", valid: true, format: "1234AB", display: "1234 AB", code: "1234AB", full: "1234 AB"},
-		{country: "NL", input: "12 34 AB", valid: false},
-		{country: "GB", input: "ec1y 8sy", valid: true, format: "EC1Y8SY", display: "EC1Y 8SY", code: "EC1Y8SY", full: "EC1Y 8SY"},
-		{country: "GB", input: "GIR 0AA", valid: true, format: "GIR0AA", display: "GIR 0AA", code: "GIR0AA", full: "GIR 0AA"},
-		{country: "GB", input: "ZZ1 1ZZ", valid: false},
-		{country: "LU", input: "1234", valid: true, format: "L1234", display: "L-1234", code: "1234", full: "L-1234"},
-		{country: "LU", input: "L1234", valid: true, format: "L1234", display: "L-1234", code: "1234", full: "L-1234"},
-		{country: "LU", input: "L-1234", valid: true, format: "L1234", display: "L-1234", code: "1234", full: "L-1234"},
-		{country: "LU", input: "L-123", valid: false},
-		{country: "CA", input: "K1A 0B1", valid: true, format: "K1A0B1", display: "K1A 0B1", code: "K1A0B1", full: "K1A 0B1"},
-		{country: "IE", input: "D02 X285", valid: true, format: "D02X285", display: "D02 X285", code: "D02X285", full: "D02 X285"},
-		{country: "US", input: "00501", valid: true, format: "00501", display: "00501", code: "00501", full: "00501"},
-		{country: "US", input: "00501-1234", valid: true, format: "00501", display: "00501", code: "005011234", full: "00501-1234", suffix: "1234"},
-		{country: "US", input: "00501 1234", valid: true, format: "00501", display: "00501", code: "005011234", full: "00501-1234", suffix: "1234"},
-		{country: "US", input: "005011234", valid: true, format: "00501", display: "00501", code: "005011234", full: "00501-1234", suffix: "1234"},
-		{country: "US", input: "00501-123", valid: false},
-		{country: "US", input: "00501123", valid: false},
-	}
+type goldenCase struct {
+	Country string        `json:"country"`
+	Input   string        `json:"input"`
+	Valid   bool          `json:"valid"`
+	Outputs *goldenOutput `json:"outputs,omitempty"`
+}
 
-	for _, tt := range tests {
-		t.Run(tt.country+"/"+tt.input, func(t *testing.T) {
-			p, err := postcode.In(tt.country)
+type goldenOutput struct {
+	Format  string `json:"format"`
+	Display string `json:"display"`
+	Code    string `json:"code"`
+	Full    string `json:"full"`
+	Suffix  string `json:"suffix"`
+}
+
+func loadGoldenCases(t *testing.T) []goldenCase {
+	t.Helper()
+	data, err := os.ReadFile("testdata/postcode-golden.json")
+	if err != nil {
+		t.Fatalf("read golden cases: %v", err)
+	}
+	var cases []goldenCase
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatalf("decode golden cases: %v", err)
+	}
+	return cases
+}
+
+func TestGoldenCases(t *testing.T) {
+	for _, tt := range loadGoldenCases(t) {
+		t.Run(tt.Country+"/"+tt.Input, func(t *testing.T) {
+			p, err := postcode.In(tt.Country)
 			if err != nil {
-				t.Fatalf("In(%q): %v", tt.country, err)
+				t.Fatalf("In(%q): %v", tt.Country, err)
 			}
-			if got := p.IsValid(tt.input); got != tt.valid {
-				t.Errorf("IsValid(%q) = %v, want %v", tt.input, got, tt.valid)
+			if got := p.IsValid(tt.Input); got != tt.Valid {
+				t.Errorf("IsValid(%q) = %v, want %v", tt.Input, got, tt.Valid)
 			}
-			if tt.format != "" {
-				if got := p.Format(tt.input); got != tt.format {
-					t.Errorf("Format(%q) = %q, want %q", tt.input, got, tt.format)
+			if tt.Outputs != nil {
+				if got := p.Format(tt.Input); got != tt.Outputs.Format {
+					t.Errorf("Format(%q) = %q, want %q", tt.Input, got, tt.Outputs.Format)
 				}
-				if got := p.Display(tt.input); got != tt.display {
-					t.Errorf("Display(%q) = %q, want %q", tt.input, got, tt.display)
+				if got := p.Display(tt.Input); got != tt.Outputs.Display {
+					t.Errorf("Display(%q) = %q, want %q", tt.Input, got, tt.Outputs.Display)
 				}
-				if got := p.Code(tt.input); got != tt.code {
-					t.Errorf("Code(%q) = %q, want %q", tt.input, got, tt.code)
+				if got := p.Code(tt.Input); got != tt.Outputs.Code {
+					t.Errorf("Code(%q) = %q, want %q", tt.Input, got, tt.Outputs.Code)
 				}
-				if got := p.FullDisplay(tt.input); got != tt.full {
-					t.Errorf("FullDisplay(%q) = %q, want %q", tt.input, got, tt.full)
+				if got := p.FullDisplay(tt.Input); got != tt.Outputs.Full {
+					t.Errorf("FullDisplay(%q) = %q, want %q", tt.Input, got, tt.Outputs.Full)
 				}
-				if got := p.Suffix(tt.input); got != tt.suffix {
-					t.Errorf("Suffix(%q) = %q, want %q", tt.input, got, tt.suffix)
+				if got := p.Suffix(tt.Input); got != tt.Outputs.Suffix {
+					t.Errorf("Suffix(%q) = %q, want %q", tt.Input, got, tt.Outputs.Suffix)
 				}
 			}
 		})
