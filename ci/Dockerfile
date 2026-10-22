@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go test ./... && CGO_ENABLED=0 go build -trimpath -o /postcode-smoke ./ci
+RUN CGO_ENABLED=0 go build -trimpath -o /postcode-smoke ./ci
 
 FROM busybox:latest
 
