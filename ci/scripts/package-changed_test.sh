@@ -23,7 +23,7 @@ assert_change() {
 	git -C "$repo" commit -qm "change $path"
 	local head actual
 	head=$(git -C "$repo" rev-parse HEAD)
-	actual=$(cd "$repo" && bash "$repo_root/ci/package-changed.sh" "$base" "$head")
+	actual=$(cd "$repo" && bash "$repo_root/ci/scripts/package-changed.sh" "$base" "$head")
 	if [[ "$actual" != "$expected" ]]; then
 		printf 'expected %s for %s; got %s\n' "$expected" "$path" "$actual" >&2
 		exit 1
@@ -40,7 +40,7 @@ printf 'dependency change\n' >> "$repo/go.sum"
 git -C "$repo" add go.sum
 git -C "$repo" commit -qm 'change go.sum'
 head=$(git -C "$repo" rev-parse HEAD)
-actual=$(cd "$repo" && bash "$repo_root/ci/package-changed.sh" "$base" "$head")
+actual=$(cd "$repo" && bash "$repo_root/ci/scripts/package-changed.sh" "$base" "$head")
 if [[ "$actual" != package_changed=true ]]; then
 	printf 'expected true for go.sum; got %s\n' "$actual" >&2
 	exit 1
