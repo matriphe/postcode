@@ -14,7 +14,7 @@ fi
 
 changed=false
 while IFS= read -r -d '' path; do
-	if [[ "$path" == 'go.mod' || "$path" == 'go.sum' || ( "$path" == *.go && "$path" != .github/ci/* ) ]]; then
+	if [[ "$path" == 'go.mod' || "$path" == 'go.sum' || ( "$path" == *.go && "$path" != .github/go/* ) ]]; then
 		changed=true
 		break
 	fi
