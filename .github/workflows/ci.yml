@@ -28,6 +28,9 @@ jobs:
       - name: Test package version rules
         run: bash ci/next-version_test.sh
 
+      - name: Test GitHub release rules
+        run: bash ci/ensure-github-release_test.sh
+
       - name: Build package
         run: go build ./...
 
@@ -64,25 +67,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve and push version tag
+      - name: Resolve version, push tag, and publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
-          if git tag --points-at "$GITHUB_SHA" | grep -Eq '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
-            echo "This commit already has a package version tag; skipping."
-            exit 0
-          fi
-
-          branch=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
-            --jq '[.[] | select(.base.ref == "main" and .merged_at != null)][0].head.ref // ""')
-          latest=$(git tag --list \
+          version=$(git tag --points-at "$GITHUB_SHA" \
             | grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' \
             | sort -V \
             | tail -n 1 || true)
-          module_path=$(awk '$1 == "module" { print $2; exit }' go.mod)
-          version=$(bash ci/next-version.sh "$branch" "$latest" "$module_path")
 
-          git tag "$version" "$GITHUB_SHA"
-          git push origin "$version"
+          if [[ -n "$version" ]]; then
+            echo "This commit already has package version tag $version."
+          else
+            branch=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+              --jq '[.[] | select(.base.ref == "main" and .merged_at != null)][0].head.ref // ""')
+            latest=$(git tag --list \
+              | grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' \
+              | sort -V \
+              | tail -n 1 || true)
+            module_path=$(awk '$1 == "module" { print $2; exit }' go.mod)
+            version=$(bash ci/next-version.sh "$branch" "$latest" "$module_path")
+
+            git tag "$version" "$GITHUB_SHA"
+            git push origin "$version"
+          fi
+
+          bash ci/ensure-github-release.sh "$version"
