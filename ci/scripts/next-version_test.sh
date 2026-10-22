@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-version_script="$repo_root/ci/next-version.sh"
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+version_script="$repo_root/ci/scripts/next-version.sh"
 module_path='github.com/matriphe/postcode'
 
 assert_version() {

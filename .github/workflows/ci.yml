@@ -24,12 +24,12 @@ jobs:
       - name: Detect package changes
         id: package-changes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false
-        run: bash ci/package-changed.sh "$BEFORE_SHA" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+        run: bash ci/scripts/package-changed.sh "$BEFORE_SHA" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
         env:
           BEFORE_SHA: ${{ github.event.before }}
 
       - name: Test package change detection
-        run: bash ci/package-changed_test.sh
+        run: bash ci/scripts/package-changed_test.sh
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -40,10 +40,10 @@ jobs:
         run: go test ./...
 
       - name: Test package version rules
-        run: bash ci/next-version_test.sh
+        run: bash ci/scripts/next-version_test.sh
 
       - name: Test GitHub release rules
-        run: bash ci/ensure-github-release_test.sh
+        run: bash ci/scripts/ensure-github-release_test.sh
 
       - name: Build package
         run: go build ./...
@@ -102,10 +102,10 @@ jobs:
               | sort -V \
               | tail -n 1 || true)
             module_path=$(awk '$1 == "module" { print $2; exit }' go.mod)
-            version=$(bash ci/next-version.sh "$branch" "$latest" "$module_path")
+            version=$(bash ci/scripts/next-version.sh "$branch" "$latest" "$module_path")
 
             git tag "$version" "$GITHUB_SHA"
             git push origin "$version"
           fi
 
-          bash ci/ensure-github-release.sh "$version"
+          bash ci/scripts/ensure-github-release.sh "$version"
