@@ -1,16 +1,13 @@
 package main
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/matriphe/postcode"
+	"github.com/matriphe/postcode/testdata"
 )
-
-//go:embed testdata/postcode-golden.json
-var goldenData []byte
 
 type goldenCase struct {
 	Country string        `json:"country"`
@@ -29,7 +26,7 @@ type goldenOutput struct {
 
 func main() {
 	var cases []goldenCase
-	if err := json.Unmarshal(goldenData, &cases); err != nil {
+	if err := json.Unmarshal(testdata.GoldenCases, &cases); err != nil {
 		fail("decode golden cases: %v", err)
 	}
 

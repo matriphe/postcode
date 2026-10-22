@@ -26,7 +26,7 @@ type goldenOutput struct {
 
 func loadGoldenCases(t *testing.T) []goldenCase {
 	t.Helper()
-	data, err := os.ReadFile("ci/go/testdata/postcode-golden.json")
+	data, err := os.ReadFile("testdata/postcode-golden.json")
 	if err != nil {
 		t.Fatalf("read golden cases: %v", err)
 	}
