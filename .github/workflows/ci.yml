@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Build BusyBox smoke image
-        run: docker build --pull -f ci/Dockerfile -t postcode-ci .
+        run: docker build --pull -f ci/go/Dockerfile -t postcode-ci .
 
       - name: Run golden cases in BusyBox
         run: docker run --rm postcode-ci
