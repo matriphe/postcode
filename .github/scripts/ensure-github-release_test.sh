@@ -25,13 +25,13 @@ export PATH="$test_dir/bin:$PATH"
 export GH_STUB_LOG="$test_dir/gh.log"
 : > "$GH_STUB_LOG"
 
-GH_STUB_RELEASE_EXISTS=1 bash "$repo_root/ci/scripts/ensure-github-release.sh" v0.1.0
+GH_STUB_RELEASE_EXISTS=1 bash "$repo_root/.github/scripts/ensure-github-release.sh" v0.1.0
 if [[ -s "$GH_STUB_LOG" ]]; then
 	printf 'existing release should not be recreated\n' >&2
 	exit 1
 fi
 
-GH_STUB_RELEASE_EXISTS=0 bash "$repo_root/ci/scripts/ensure-github-release.sh" v0.1.1
+GH_STUB_RELEASE_EXISTS=0 bash "$repo_root/.github/scripts/ensure-github-release.sh" v0.1.1
 expected=$(printf 'release\ncreate\nv0.1.1\n--verify-tag\n--generate-notes')
 actual=$(cat "$GH_STUB_LOG")
 if [[ "$actual" != "$expected" ]]; then

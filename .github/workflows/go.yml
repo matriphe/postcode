@@ -24,12 +24,12 @@ jobs:
       - name: Detect package changes
         id: package-changes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false
-        run: bash ci/scripts/package-changed.sh "$BEFORE_SHA" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+        run: bash .github/scripts/package-changed.sh "$BEFORE_SHA" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
         env:
           BEFORE_SHA: ${{ github.event.before }}
 
       - name: Test package change detection
-        run: bash ci/scripts/package-changed_test.sh
+        run: bash .github/scripts/package-changed_test.sh
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -40,10 +40,10 @@ jobs:
         run: go test ./...
 
       - name: Test package version rules
-        run: bash ci/scripts/next-version_test.sh
+        run: bash .github/scripts/next-version_test.sh
 
       - name: Test GitHub release rules
-        run: bash ci/scripts/ensure-github-release_test.sh
+        run: bash .github/scripts/ensure-github-release_test.sh
 
       - name: Build package
         run: go build ./...
@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Build smoke test image
-        run: docker build --pull -f ci/go/Dockerfile -t postcode-ci .
+        run: docker build --pull -f .github/go/Dockerfile -t postcode-ci .
 
       - name: Run golden cases
         run: docker run --rm postcode-ci
@@ -102,10 +102,10 @@ jobs:
               | sort -V \
               | tail -n 1 || true)
             module_path=$(awk '$1 == "module" { print $2; exit }' go.mod)
-            version=$(bash ci/scripts/next-version.sh "$branch" "$latest" "$module_path")
+            version=$(bash .github/scripts/next-version.sh "$branch" "$latest" "$module_path")
 
             git tag "$version" "$GITHUB_SHA"
             git push origin "$version"
           fi
 
-          bash ci/scripts/ensure-github-release.sh "$version"
+          bash .github/scripts/ensure-github-release.sh "$version"
