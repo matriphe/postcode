@@ -13,9 +13,23 @@ jobs:
   unit-tests:
     name: Go unit tests
     runs-on: ubuntu-latest
+    outputs:
+      package_changed: ${{ steps.package-changes.outputs.package_changed }}
     steps:
       - name: Check out source
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect package changes
+        id: package-changes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false
+        run: bash ci/package-changed.sh "$BEFORE_SHA" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+
+      - name: Test package change detection
+        run: bash ci/package-changed_test.sh
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -50,7 +64,7 @@ jobs:
 
   version:
     name: Tag package version
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && needs.unit-tests.outputs.package_changed == 'true'
     needs:
       - unit-tests
       - docker-smoke
