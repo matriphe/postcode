@@ -1,0 +1,20 @@
+name: Go CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build BusyBox smoke image
+        run: docker build --pull -f ci/Dockerfile -t postcode-ci .
+
+      - name: Run golden cases in BusyBox
+        run: docker run --rm postcode-ci
