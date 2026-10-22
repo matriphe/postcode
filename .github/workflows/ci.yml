@@ -1,4 +1,4 @@
-name: Go CI
+name: Go
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   unit-tests:
-    name: Go unit tests
+    name: Unit tests
     runs-on: ubuntu-latest
     outputs:
       package_changed: ${{ steps.package-changes.outputs.package_changed }}
@@ -49,7 +49,7 @@ jobs:
         run: go build ./...
 
   docker-smoke:
-    name: BusyBox smoke test
+    name: Build test
     needs: unit-tests
     runs-on: ubuntu-latest
     steps:
@@ -63,7 +63,7 @@ jobs:
         run: docker run --rm postcode-ci
 
   version:
-    name: Tag package version
+    name: Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && needs.unit-tests.outputs.package_changed == 'true'
     needs:
       - unit-tests
