@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT
 repo="$test_dir/repo"
@@ -23,7 +23,7 @@ assert_change() {
 	git -C "$repo" commit -qm "change $path"
 	local head actual
 	head=$(git -C "$repo" rev-parse HEAD)
-	actual=$(cd "$repo" && bash "$repo_root/ci/scripts/package-changed.sh" "$base" "$head")
+	actual=$(cd "$repo" && bash "$repo_root/.github/ci/scripts/package-changed.sh" "$base" "$head")
 	if [[ "$actual" != "$expected" ]]; then
 		printf 'expected %s for %s; got %s\n' "$expected" "$path" "$actual" >&2
 		exit 1
@@ -32,7 +32,7 @@ assert_change() {
 
 assert_change README.md package_changed=false
 assert_change .github/workflows/ci.yml package_changed=false
-assert_change ci/go/main.go package_changed=false
+assert_change .github/ci/go/main.go package_changed=false
 assert_change subpackage/package.go package_changed=true
 
 git -C "$repo" checkout -q "$base" --detach
@@ -40,7 +40,7 @@ printf 'dependency change\n' >> "$repo/go.sum"
 git -C "$repo" add go.sum
 git -C "$repo" commit -qm 'change go.sum'
 head=$(git -C "$repo" rev-parse HEAD)
-actual=$(cd "$repo" && bash "$repo_root/ci/scripts/package-changed.sh" "$base" "$head")
+actual=$(cd "$repo" && bash "$repo_root/.github/ci/scripts/package-changed.sh" "$base" "$head")
 if [[ "$actual" != package_changed=true ]]; then
 	printf 'expected true for go.sum; got %s\n' "$actual" >&2
 	exit 1
